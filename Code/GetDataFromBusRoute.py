@@ -15,14 +15,67 @@ import json
 busid = 412
 path = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusData\\"+str(busid)+".csv"
 opaldata =  pd.read_csv(path)
-opaldata = opaldata[["ROUTE_ID","BUS_ID","TRIP_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG2_TM","TAG2_TS_NUM"]]
+
+opaldata = opaldata[["TRIP_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG1_TS_NM","TAG1_LAT_VAL", "TAG1_LONG_VAL","TAG2_TM","TAG2_TS_NUM","TAG2_TS_NM","TAG2_LAT_VAL", "TAG2_LONG_VAL"]]
 
 #drop the outliers
 opaldata = opaldata[~opaldata["TAG1_TS_NUM"].isin([-1])]
 opaldata = opaldata[~opaldata["TAG2_TS_NUM"].isin([-1])]
 
+
+'''
 print(list(set(list(opaldata["TAG1_TS_NUM"]))))
 print(len(list(set(list(opaldata["TAG1_TS_NUM"])))))
+print()
+print(list(set(list(opaldata["TAG2_TS_NUM"]))))
+print(len(list(set(list(opaldata["TAG2_TS_NUM"])))))
+
+print()
+print()
+print()
+stopsname = list(set(list(opaldata["TAG1_TS_NM"])))
+print(stopsname)
+print(len(stopsname))
+'''
+#看一下每个站上车人数和下车人数各为多少
+stops_tapon =  list(set(list(opaldata["TAG1_TS_NUM"])))
+stops_tapoff = list(set(list(opaldata["TAG2_TS_NUM"])))
+l = [i for i in stops_tapon if i in stops_tapoff]
+tapon = {}
+tapoff = {}
+for i in l:
+    grouped_bytapon = opaldata.groupby("TAG1_TS_NUM")
+    for name_tapon,group in grouped_bytapon:
+        tapon[name_tapon] = group.shape[0]
+    grouped_bytapoff = opaldata.groupby("TAG2_TS_NUM")
+    for name_tapoff,group in grouped_bytapon:
+        tapoff[name_tapoff] = group.shape[0]
+    #print("-----------------------------")
+    #print()         
+print(tapon)
+print()
+print(tapoff)
+
+#看一下不正常站点的地理位置
+stops = [5176,7364,8245,204219,204212]
+#for i in stops:
+partdata = opaldata[opaldata["TAG1_TS_NUM"].isin([5176,7364,8245,204219,204212])]
+print(partdata)
+print(partdata.shape)
+print()
+print()
+#筛选出上下车乘客人数超过thresholdNum的站台
+condidatestops = []
+thresholdNum = 10000
+for stop in l:
+    num_tapon = opaldata[opaldata["TAG1_TS_NUM"] == stop].shape[0]
+    num_tapoff = opaldata[opaldata["TAG2_TS_NUM"] == stop].shape[0]
+    if num_tapon + num_tapoff >= thresholdNum:
+        condidatestops.append(stop)
+print(condidatestops)
+print(len(condidatestops))
+print()
+print(opaldata[opaldata["TAG1_TS_NUM"].isin(condidatestops)])
 ######################################
 '''
 #busids = [326,327,386,387,369,397,399,412]

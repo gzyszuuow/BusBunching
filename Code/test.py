@@ -13,15 +13,17 @@ import os
 import json
 from functools import cmp_to_key
 
-path = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusData\\2016-02-01.csv"
+#path = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusData\\2016-02-01.csv"
+busid = 412
+path = "/Users/gongcengyang/Desktop/BusBunching-master/Data/"+str(busid)+".csv"
 opaldata =  pd.read_csv(path)
 
 #opaldata = opaldata[["TRIP_ID","BUS_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG1_TS_NM","TAG1_LAT_VAL", "TAG1_LONG_VAL","TAG2_TM","TAG2_TS_NUM","TAG2_TS_NM","TAG2_LAT_VAL", "TAG2_LONG_VAL"]]
-
+opaldata = opaldata[["ROUTE_ID","BUS_ID","TRIP_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG1_TS_NM","TAG2_TM","TAG2_TS_NUM","TAG2_TS_NM"]]
 #drop the outliers
 opaldata = opaldata[~opaldata["TAG1_TS_NUM"].isin([-1])]
 opaldata = opaldata[~opaldata["TAG2_TS_NUM"].isin([-1])]
-
+'''
 opaldata.sort_values(by=['TAG1_TM'],inplace=True)
 
 grouped = opaldata.groupby(["BUS_ID","TRIP_ID"])
@@ -46,11 +48,7 @@ def sort_df(s1,s2):
         return 1
     return 0
 
-#l.sort(key = lambda x,y:cmp(list(x["TAG1_TM"])[0],list(y["TAG1_TM"])[0]))
 
-#l_ = sorted(l,key = sort_df)
-
-#print(l_)
 
 l.sort(key = cmp_to_key(sort_df))
 
@@ -66,3 +64,23 @@ for df in l:
         print(stops_)
         print(stops)
         print("*********************************************")
+'''
+
+
+#输出整个两个月时间中上下车乘客很少的车站及其opal信息
+stops_ = []
+threshold = 10
+for stopid,group_bystopid in opaldata.groupby("TAG1_TS_NUM"):
+    if group_bystopid.shape[0] <= threshold:
+        stops_.append(stopid)
+        #print(group_bystopid)
+        print(group_bystopid.shape[0])
+
+print()
+print(stops_)
+print(len(stops_))
+
+opaldata_ = opaldata["TAG1_TS_NUM"].isin([stops_])
+
+print("************************")
+print(opaldata[opaldata["TAG1_TS_NUM"].isin(stops_)])

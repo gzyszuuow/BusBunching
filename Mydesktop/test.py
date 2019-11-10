@@ -47,7 +47,7 @@ for ROUTE_VAR_ID, group in opaldata.groupby("ROUTE_VAR_ID"):
     
     ROUTE_VARs_STOPS_NUM[ROUTE_VAR_ID] = len(ROUTE_VARs_STOPS[ROUTE_VAR_ID])
 
-print(ROUTE_VARs_STOPS)
+#rint(ROUTE_VARs_STOPS)
 
 ROUTE_VARs_STOPS_INTERSECTIONS = {}
 for routeid in ROUTE_VARs_STOPS.keys():
@@ -57,9 +57,46 @@ for routeid in ROUTE_VARs_STOPS.keys():
             l1 = copy.deepcopy(ROUTE_VARs_STOPS[routeid])
             l2 = copy.deepcopy(route_vars_stops)
             l3 = list(set([value for value in l1 if value in l2]))
-            ROUTE_VARs_STOPS_INTERSECTIONS[routeid][route_vars_id] = l3
+            #ROUTE_VARs_STOPS_INTERSECTIONS[routeid][route_vars_id] = list(set(l3))
+            ROUTE_VARs_STOPS_INTERSECTIONS[routeid][route_vars_id] = len(list(set(l3)))
 
-print(ROUTE_VARs_STOPS_INTERSECTIONS)
+
+#print(ROUTE_VARs_STOPS_NUM)
+#print()
+#print("-------------")
+#print()
+#print(ROUTE_VARs_STOPS_INTERSECTIONS)
+
+print("------------------------------")
+print("------------------------------")
+print("------------------------------")
+
+#the sequence of stops
+StopsSequence = []
+StopsTimeEachtrip = {}
+opaldata = opaldata[["ROUTE_ID", 'ROUTE_VAR_ID','BUS_ID', "TRIP_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG2_TM","TAG2_TS_NUM"]]
+grouped_byday = opaldata.groupby("JS_STRT_DT_FK")
+num = 0
+for name_byday,group_byday in grouped_byday:
+    #a json file per day
+    dataperday_json = {}
+    group_byday.sort_values(by=['TAG1_TM'],inplace=True)
+    tripnum_perday = 0
+    grouped_bytrip = group_byday.groupby("TRIP_ID")
+    for name_bytrip,group_bytrip in grouped_bytrip:
+        StopsTimeEachtrip[num] = {}
+
+        for index,row in opaldata.iterrows():
+            tapontime = row["TAG1_TM"]
+            tapoftime = row["TAG2_TM"]
+            taponstop = row["TAG1_TS_NUM"]
+            tapoffstop = row["TAG2_TS_NUM"]
+
+            StopsTimeEachtrip[num][tapontime] = taponstop
+            StopsTimeEachtrip[num][tapoftime] = tapoffstop
+        num+=1
+
+print(StopsTimeEachtrip)
 '''
 #draw all the stops
 StopMapsEachGroup = {}

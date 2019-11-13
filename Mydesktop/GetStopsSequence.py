@@ -32,6 +32,23 @@ opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'RUN_DIR_CD', 'TRIP_ID
 
 opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
 
+
+#For direction 1
+#(1)找到y值最低的点作为原点
+#(2)原点右边的值按照x值由大到小的排列
+#(3)原点左边的值按照y值由小到大排列
+Stops_sequence = []
+Stops_Direction1 = {}
+opaldat_part = opaldata[opaldata["ROUTE_VAR_ID"] == '1']
+
+
+
+#For direction 2
+#(1)找到y值最低的点作为原点
+#(2)原点左边的值按照y值由大到小排列
+#(3)原点右边的值按照x值由小到大排列
+
+'''
 #Find all the stops can be used
 
 grouped_bydirection = opaldata.groupby("RUN_DIR_CD")
@@ -127,7 +144,7 @@ for name_bydirection,group_bydirection in grouped_bydirection:
 
     print()
     print()
-    
+'''  
 
 '''
 StopsTimeEachtrip = {}

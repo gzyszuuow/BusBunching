@@ -12,9 +12,17 @@ from time import mktime
 import os
 import json
 from functools import cmp_to_key
+import imageio
 
 import numpy as np  # 数组相关的库
 import matplotlib.pyplot as plt  # 绘图库
+
+def GetdictKeyByValue(dic,value):
+    Keys = []
+    for key,value_ in dic.items():
+        if value == value_:
+            Keys.append(key)
+    return Keys
 
 
 #ROUTEID from right to left
@@ -25,12 +33,12 @@ ROUTEsID2 = ['400-41','400-42','400-60','400-61','400-62']
 ROUTEsID3 = ['400-43','400-44','400-49','400-50','400-51','400-54','400-69']
 
 busid = 400
-path = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\"+str(busid)+".csv"
-opaldata =  pd.read_csv(path)
+#path = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\"+str(busid)+".csv"
+#opaldata =  pd.read_csv(path)
 #opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'OPRTR_ID', 'RUN_DIR_CD', 'TRIP_ID', 'JS_STRT_DT_FK','TAG1_TM', 'TAG1_TS_NUM', 'TAG1_TS_NM', 'TAG1_LAT_VAL', 'TAG1_LONG_VAL','TAG2_TM', 'TAG2_TS_NUM', 'TAG2_TS_NM', 'TAG2_LAT_VAL','TAG2_LONG_VAL']]
-opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'RUN_DIR_CD', 'TRIP_ID', 'JS_STRT_DT_FK','TAG1_TM', 'TAG1_TS_NUM', 'TAG1_LAT_VAL', 'TAG1_LONG_VAL','TAG2_TM', 'TAG2_TS_NUM', 'TAG2_LAT_VAL','TAG2_LONG_VAL']]
+#opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'RUN_DIR_CD', 'TRIP_ID', 'JS_STRT_DT_FK','TAG1_TM', 'TAG1_TS_NUM', 'TAG1_LAT_VAL', 'TAG1_LONG_VAL','TAG2_TM', 'TAG2_TS_NUM', 'TAG2_LAT_VAL','TAG2_LONG_VAL']]
 
-opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
+#opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
 
 
 #For direction 1
@@ -39,7 +47,91 @@ opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
 #(3)原点左边的值按照y值由小到大排列
 Stops_sequence = []
 Stops_Direction1 = {}
-opaldat_part = opaldata[opaldata["ROUTE_VAR_ID"] == '1']
+
+Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
+Stops_400Bus_Direction_1 = None
+with open(Stops_400Bus_Direction_1_path) as f:
+    d = json.load(f)
+    Stops_400Bus_Direction_1 = dict(d)
+
+AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
+AllTrips_400Bus_Direction1 = None
+with open(AllTrips_400Bus_Direction1_path) as f:
+    d = json.load(f)
+    AllTrips_400Bus_Direction1 = dict(d)
+
+KeysFilterEachTrip = {}
+for num,trip_dic in AllTrips_400Bus_Direction1.items():
+    KeysFilterEachTrip[num] = []
+
+    for time, stopid in trip_dic.items():
+        if stopid not in list(Stops_400Bus_Direction_1.keys()):
+            KeysFilterEachTrip[num]+=GetdictKeyByValue(trip_dic,stopid)
+
+for num,trip_dic in AllTrips_400Bus_Direction1.items():
+    Keys = KeysFilterEachTrip[num]
+    for key in list(set(Keys)):
+        del trip_dic[key]
+print(AllTrips_400Bus_Direction1)
+
+minStopY = 10000
+minStop = 10000
+StopsRight = []
+StopsLeft = []
+for stopid,location_dic in Stops_400Bus_Direction_1.items():
+    y = location_dic["Y"]
+    if y<minStopY:
+        minStopY = y
+        minStop = stopid
+
+
+minStopX = Stops_400Bus_Direction_1[minStop]["X"]
+StopsRight_dic = {}
+StopsLeft_dic = {}
+for stopid,location_dic in Stops_400Bus_Direction_1.items():
+    if minStop == stopid:
+        continue
+    x = location_dic["X"]
+    if x>minStopX:
+        StopsRight_dic[location_dic["X"]] = stopid
+    else:
+        StopsLeft_dic[location_dic["Y"]] = stopid
+
+StopsRight_dic = dict(sorted(StopsRight_dic.items(),reverse=True))
+StopsLeft_dic = dict(sorted(StopsLeft_dic.items()))
+
+StopsRight = list(StopsRight_dic.values())
+StopsLeft = list(StopsLeft_dic.values())
+
+for stopid in StopsRight:
+    Stops_sequence.append(stopid)
+Stops_sequence.append(minStop)
+for stopid in StopsLeft:
+    Stops_sequence.append(stopid)
+
+
+# determine the right sequence of stops
+for i,trip in AllTrips_400Bus_Direction1.items():
+    
+    tripStopsSquence = list(trip.values())
+
+    index1 = 0
+    index2 = 0
+    while(index1<=len(tripStopsSquence)-2):
+        index2 = index1+1
+        while(index2<=len(tripStopsSquence)-1):
+            index2+=1
+            stop1 = tripStopsSquence[index1]
+            stop2 = tripStopsSquence[index2]
+
+            stop1_index_ = Stops_sequence.index(stop1)
+            stop2_index_ = Stops_sequence.index(stop2)
+            if stop1_index_ > stop2_index_:
+                print(tripStopsSquence)
+                print("--------------------------")
+                print()
+        index1+=1            
+
 
 
 
@@ -50,7 +142,6 @@ opaldat_part = opaldata[opaldata["ROUTE_VAR_ID"] == '1']
 
 '''
 #Find all the stops can be used
-
 grouped_bydirection = opaldata.groupby("RUN_DIR_CD")
 for name_bydirection,group_bydirection in grouped_bydirection:
     #draw all the stops
@@ -61,7 +152,6 @@ for name_bydirection,group_bydirection in grouped_bydirection:
     for index,row in group_bydirection.iterrows():
         TAG1_TS_NUM = row["TAG1_TS_NUM"]
         TAG2_TS_NUM = row["TAG2_TS_NUM"]
-
         if StopMapsEachGroup.get(TAG1_TS_NUM) == None:
             StopMapsEachGroup[TAG1_TS_NUM] = {"X":row["TAG1_LONG_VAL"],"Y":row["TAG1_LAT_VAL"]}
             StopIDs.append(TAG1_TS_NUM)
@@ -73,17 +163,13 @@ for name_bydirection,group_bydirection in grouped_bydirection:
             Xs.append(row["TAG2_LONG_VAL"])
             Ys.append(row["TAG2_LAT_VAL"])
         
-
     plt.subplot(121)
     plt.scatter(Xs, Ys, alpha=0.6)  # 绘制散点图，透明度为0.6（这样颜色浅一点，比较好看）
     plt.title("All stops")
     plt.xlim(xmin = 151.075,xmax = 151.30)
     plt.ylim(ymin = -33.985 ,ymax = -33.84)
-
-
     #Threshold = 1500
     Threshold = 2000
-
     #The stops passengers(drop on + drop off)<=Threshold
     PartStopIDsNoMoreThreshold = []
     for stopid in StopIDs:
@@ -91,21 +177,16 @@ for name_bydirection,group_bydirection in grouped_bydirection:
         num_off = group_bydirection[group_bydirection["TAG2_TS_NUM"] == stopid].shape[0]
         if num_on+num_off <= Threshold:
             PartStopIDsNoMoreThreshold.append(stopid)
-
     PartXsNoMoreThreshold = []
     PartYsNoMoreThreshold = []
     for stopid in PartStopIDsNoMoreThreshold:
         PartXsNoMoreThreshold.append(StopMapsEachGroup[stopid]["X"])
         PartYsNoMoreThreshold.append(StopMapsEachGroup[stopid]["Y"])
-
-
     plt.subplot(222)
     plt.scatter(PartXsNoMoreThreshold, PartYsNoMoreThreshold, alpha=0.6)  # 绘制散点图，透明度为0.6（这样颜色浅一点，比较好看）
     plt.title("NoMoreThresold: "+str(len(PartStopIDsNoMoreThreshold))+" stops")
     plt.xlim(xmin = 151.075,xmax = 151.30)
     plt.ylim(ymin = -33.985 ,ymax = -33.84)
-
-
     #The stops passengers(drop on + drop off)>Threshold
     PartStopIDsMoreThreshold= []
     for stopid in StopIDs:
@@ -116,14 +197,12 @@ for name_bydirection,group_bydirection in grouped_bydirection:
     for stopid in PartStopIDsMoreThreshold:
         PartXsMoreThreshold.append(StopMapsEachGroup[stopid]["X"])
         PartYsMoreThreshold.append(StopMapsEachGroup[stopid]["Y"])
-
     plt.subplot(122)
     plt.scatter(PartXsMoreThreshold, PartYsMoreThreshold, alpha=0.6)  # 绘制散点图，透明度为0.6（这样颜色浅一点，比较好看）
     #plt.title("MoreThresold: "+str(len(PartStopIDsMoreThreshold))+" stops")
     plt.title("Selected stops")
     plt.xlim(xmin = 151.075,xmax = 151.30)
     plt.ylim(ymin = -33.985 ,ymax = -33.84)
-
     print("Direction: "+str(name_bydirection))
     print("Passenger num: "+str(group_bydirection.shape[0]))
     print(set(group_bydirection["ROUTE_VAR_ID"]))
@@ -138,10 +217,8 @@ for name_bydirection,group_bydirection in grouped_bydirection:
     fileObject = open(path_json, 'w')
     fileObject.write(StopMapsEachGroup_partuse_json)
     fileObject.close()
-
     plt.show()
     plt.close()
-
     print()
     print()
 '''  
@@ -154,29 +231,23 @@ for name_bydirection,group_bydirection in grouped_bydirection:
     num = 0
     grouped_byday = group_bydirection.groupby("JS_STRT_DT_FK")
     for name_byday,group_byday in grouped_byday:
-
         #group_byday.sort_values(by=['TAG1_TM'],inplace=True)
         grouped_bytrip = group_byday.groupby("TRIP_ID")
-
         for name_bytrip,group_bytrip in grouped_bytrip:
             AllTripsEachDirection[num] = {}
-
             for index,row in group_bytrip.iterrows():
                 tapontime = row["TAG1_TM"]
                 tapoftime = row["TAG2_TM"]
                 taponstop = row["TAG1_TS_NUM"]
                 tapoffstop = row["TAG2_TS_NUM"]
-
                 AllTripsEachDirection[num][tapontime] = taponstop
                 AllTripsEachDirection[num][tapoftime] = tapoffstop
             num+=1
-
     AllTripsEachDirection_sorted = {}
     #print(StopsTimeEachtrip)
     for i,j in AllTripsEachDirection.items():
         j_ = dict(sorted(j.items()))
         AllTripsEachDirection_sorted[i] = j_
-
     
     AllTripsEachDirection_json = json.dumps(AllTripsEachDirection_sorted)
     path_json = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction"+str(name_bydirection)+".json"
@@ -189,7 +260,6 @@ for name_bydirection,group_bydirection in grouped_bydirection:
 #1. the earliest time of each routid each day
 EarliestTime = {}
 grouped_byday = opaldata.groupby("JS_STRT_DT_FK")
-
 for name_byday,group_byday in grouped_byday:
     EarliestTime[name_byday] = {}
     #group_byday.sort_values(by=['TAG1_TM'],inplace=True)
@@ -199,7 +269,6 @@ for name_byday,group_byday in grouped_byday:
         for index,row in group_byROUTE_VAR.iterrows():
             EarliestTime[name_byday][name_byROUTE_VAR] = row["TAG1_TM"]
             break
-
 print(EarliestTime)
 '''
 
@@ -219,7 +288,6 @@ for routeid1 in ROUTEsID1:
     dic1[routeid1] = {}
     dic2[routeid1] = {}
     dic3[routeid1] = {}
-
     l1 = BusidsForEachROUTE_VAR_ID["400-"+str(routeid1)]
     for routeid2 in ROUTEsID1:
         if routeid1 == routeid2:
@@ -235,7 +303,6 @@ for routeid1 in ROUTEsID1:
         l2 = BusidsForEachROUTE_VAR_ID["400-"+str(routeid2)]
         #dic3[routeid1][routeid2] = list(set([value for value in l1 if value in l2]))
         dic3[routeid1][routeid2] = len(list(set([value for value in l1 if value in l2])))
-
 print(dic1)
 print()
 print(dic2)
@@ -253,9 +320,7 @@ print()
 #the direction of each 
 num = 0
 grouped_bydirection = opaldata.groupby("RUN_DIR_CD")
-
 for name_bydirection,group_bydirection in grouped_bydirection:
-
     print(name_bydirection)
     print(group_bydirection)
     print(list(set(group_bydirection["ROUTE_VAR_ID"])))

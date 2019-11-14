@@ -41,39 +41,60 @@ busid = 400
 #opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
 
 
-#For direction 1
-#(1)找到y值最低的点作为原点
-#(2)原点右边的值按照x值由大到小的排列
-#(3)原点左边的值按照y值由小到大排列
+
 Stops_sequence = []
 Stops_Direction1 = {}
 
-Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
+#Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
+Stops_400Bus_Direction_1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Stops_400Bus_Direction_1.json"
 Stops_400Bus_Direction_1 = None
 with open(Stops_400Bus_Direction_1_path) as f:
     d = json.load(f)
     Stops_400Bus_Direction_1 = dict(d)
 
-AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
+#AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
+AllTrips_400Bus_Direction1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/AllTrips_400Bus_Direction1.json"
 AllTrips_400Bus_Direction1 = None
 with open(AllTrips_400Bus_Direction1_path) as f:
     d = json.load(f)
     AllTrips_400Bus_Direction1 = dict(d)
 
+#Filter the stops not in Stops_400Bus_Direction_1
 KeysFilterEachTrip = {}
 for num,trip_dic in AllTrips_400Bus_Direction1.items():
     KeysFilterEachTrip[num] = []
 
     for time, stopid in trip_dic.items():
-        if stopid not in list(Stops_400Bus_Direction_1.keys()):
+        if str(stopid) not in list(Stops_400Bus_Direction_1.keys()):
             KeysFilterEachTrip[num]+=GetdictKeyByValue(trip_dic,stopid)
 
 for num,trip_dic in AllTrips_400Bus_Direction1.items():
     Keys = KeysFilterEachTrip[num]
     for key in list(set(Keys)):
         del trip_dic[key]
-print(AllTrips_400Bus_Direction1)
 
+
+#Trips to determine the sequence of stops
+Stops_sequence = {}
+for stopid,_ in Stops_400Bus_Direction_1.items():
+    Stops_sequence[stopid] = 0
+
+for num,trip_dic in AllTrips_400Bus_Direction1.items():
+    stops = list(set(trip_dic.keys()))
+    print(len(stops))
+    if num == '1':
+        for stopid in stops:
+            Stops_sequence[stopid] = stops.index(stopid)
+print(Stops_sequence)
+
+
+
+
+'''
+#For direction 1
+#(1)找到y值最低的点作为原点
+#(2)原点右边的值按照x值由大到小的排列
+#(3)原点左边的值按照y值由小到大排列
 minStopY = 10000
 minStop = 10000
 StopsRight = []
@@ -109,7 +130,6 @@ Stops_sequence.append(minStop)
 for stopid in StopsLeft:
     Stops_sequence.append(stopid)
 
-
 # determine the right sequence of stops
 for i,trip in AllTrips_400Bus_Direction1.items():
     
@@ -120,18 +140,18 @@ for i,trip in AllTrips_400Bus_Direction1.items():
     while(index1<=len(tripStopsSquence)-2):
         index2 = index1+1
         while(index2<=len(tripStopsSquence)-1):
-            index2+=1
             stop1 = tripStopsSquence[index1]
             stop2 = tripStopsSquence[index2]
 
-            stop1_index_ = Stops_sequence.index(stop1)
-            stop2_index_ = Stops_sequence.index(stop2)
+            stop1_index_ = Stops_sequence.index(str(stop1))
+            stop2_index_ = Stops_sequence.index(str(stop2))
             if stop1_index_ > stop2_index_:
                 print(tripStopsSquence)
                 print("--------------------------")
                 print()
+            index2+=1
         index1+=1            
-
+'''
 
 
 

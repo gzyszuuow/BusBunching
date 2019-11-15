@@ -13,6 +13,7 @@ import os
 import json
 from functools import cmp_to_key
 import imageio
+from itertools import groupby
 
 import numpy as np  # 数组相关的库
 import matplotlib.pyplot as plt  # 绘图库
@@ -45,15 +46,15 @@ busid = 400
 Stops_sequence = []
 Stops_Direction1 = {}
 
-#Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
-Stops_400Bus_Direction_1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Stops_400Bus_Direction_1.json"
+Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
+#Stops_400Bus_Direction_1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Stops_400Bus_Direction_1.json"
 Stops_400Bus_Direction_1 = None
 with open(Stops_400Bus_Direction_1_path) as f:
     d = json.load(f)
     Stops_400Bus_Direction_1 = dict(d)
 
-#AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
-AllTrips_400Bus_Direction1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/AllTrips_400Bus_Direction1.json"
+AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
+#AllTrips_400Bus_Direction1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/AllTrips_400Bus_Direction1.json"
 AllTrips_400Bus_Direction1 = None
 with open(AllTrips_400Bus_Direction1_path) as f:
     d = json.load(f)
@@ -75,17 +76,210 @@ for num,trip_dic in AllTrips_400Bus_Direction1.items():
 
 
 #Trips to determine the sequence of stops
+def FindAndInsertPartStops(Stops_sequence,stops):
+
+    Stops_sequence_ = copy.deepcopy(Stops_sequence)
+
+    index = 1
+    while(index<=len(Stops_sequence_)-1):
+        stopA = Stops_sequence_[index-1]
+        stopB = Stops_sequence_[index]
+        if (stopA in stops) and (stopB in stops):
+            stopA_index = stops.index(stopA)
+            stopB_index = stops.index(stopB)
+
+            StopsPart = stops[stopA_index+1:stopB_index]
+
+            index_StopsPart = len(StopsPart)-1
+            while(index_StopsPart>=0):
+                Stops_sequence_.insert(stopA_index+1,StopsPart[index_StopsPart])
+                index_StopsPart-=1
+        
+        #print(index)
+        #print(len(Stops_sequence)-1)
+        #print(Stops_sequence)
+        #print()
+        index+=1
+
+    #return Stops_sequence_
+    
+
+
+
+def InsertStopIntoStops_sequence(Stops_sequence,stops):
+
+    start_value = Stops_sequence[0]
+    end_value = Stops_sequence[len(Stops_sequence)-1]
+    
+    if (start_value in stops) and (end_value in stops):
+        print("InsertStopIntoStops_sequence") 
+        start_index_stops = stops.index(start_value)
+        end_index_stops = stops.index(end_value)
+
+        index1 = start_index_stops-1
+        while(index1>=0):
+            Stops_sequence.insert(0,stops[index1])
+            index1-=1
+        index2 = end_index_stops+1
+        while(index2<=len(stops)-1):
+            Stops_sequence.insert(len(Stops_sequence),stops[index2])
+            index2+=1
+        FindAndInsertPartStops(Stops_sequence,stops)
+        #Stops_sequence = copy.deepcopy(FindAndInsertPartStops(Stops_sequence,stops))
+
+    elif start_value in stops:
+
+        start_index_stops = stops.index(start_value)
+        index1 = start_index_stops-1
+        while(index1>=0):
+            Stops_sequence.insert(0,stops[index1])
+            index1-=1
+    
+    elif end_value in stops:
+
+        end_index_stops = stops.index(end_value)
+        index2 = end_index_stops+1
+        while(index2<=len(stops)-1):
+            Stops_sequence.insert(len(Stops_sequence),stops[index2])
+            index2+=1
+
+
+
+
+Stops_sequence = []
+
+num = 0
+for _,trip_dic in AllTrips_400Bus_Direction1.items():
+    print(num)
+    stops = list(trip_dic.values())
+    stops = [x[0] for x in groupby(stops)]
+
+    # if a stop in a trip show more than once at different time ,this trip cannot use
+    dic = {}
+    for stopid in Stops_400Bus_Direction_1.keys():
+        dic[str(stopid)] = 0
+
+    trip_continue_flag = -1
+    for stopid in stops:
+        dic[str(stopid)] += 1
+        if dic[str(stopid)]>1:
+            trip_continue_flag = 1
+            break
+    if trip_continue_flag != 1:
+        if num == 0:
+            Stops_sequence+=stops
+        else:
+            InsertStopIntoStops_sequence(Stops_sequence,stops)
+        num+=1
+
+print(Stops_sequence)
+
+'''
+test part----------------------------------------------todo
+
+def FindAndInsertPartStops(Stops_sequence,stops):
+
+    #Stops_sequence_ = copy.deepcopy(Stops_sequence)
+
+    index = 1
+    while(index<=len(Stops_sequence)-1):
+        stopA = Stops_sequence[index-1]
+        stopB = Stops_sequence[index]
+        print(stopA)
+        print(stopB)
+        print()
+        if (stopA in stops) and (stopB in stops):
+            stopA_index = stops.index(stopA)
+            stopB_index = stops.index(stopB)
+
+            StopsPart = stops[stopA_index+1:stopB_index]
+
+            index_StopsPart = len(StopsPart)-1
+            while(index_StopsPart>=0):
+                Stops_sequence.insert(stopA_index+1,StopsPart[index_StopsPart])
+                index_StopsPart-=1
+        
+        #print(index)
+        #print(len(Stops_sequence)-1)
+        #print(Stops_sequence)
+        #print()
+        index+=1
+
+    #return Stops_sequence_
+
+Stops_sequence = ['a','b','c','d']
+stops = ['x','y','b',1,2,3,'c',5,6,7,'d']
+FindAndInsertPartStops(Stops_sequence,stops)
+print(Stops_sequence)
+
+
+'''
+
+'''
 Stops_sequence = {}
 for stopid,_ in Stops_400Bus_Direction_1.items():
-    Stops_sequence[stopid] = 0
+    Stops_sequence[stopid] = None
 
-for num,trip_dic in AllTrips_400Bus_Direction1.items():
-    stops = list(set(trip_dic.keys()))
-    print(len(stops))
+num = 0
+for _,trip_dic in AllTrips_400Bus_Direction1.items():
+
+    stops = list(trip_dic.values())
+    stops = [x[0] for x in groupby(stops)]
+
+    # if a stop in a trip show more than once at different time ,this trip cannot use
+    dic = {}
+    for stopid in Stops_400Bus_Direction_1.keys():
+        dic[str(stopid)] = 0
+
+    trip_continue_flag = -1
+    for stopid in stops:
+        dic[str(stopid)] += 1
+        if dic[str(stopid)]>1:
+            trip_continue_flag = 1
+            break
+    if trip_continue_flag != 1:
+        if num == 0:
+            index = 0
+            for stopid in stops:
+                Stops_sequence[stopid] = index
+                index+=1
+        #else------------------------------------------todo
+        else:
+            index_stops = 0
+            while(index_stops<=len(stops)):
+
+
+
+
+        num+=1
+    else:
+        continue
+print(Stops_sequence)
+'''
+
+
+
+'''
+    if len(stops)>len(Stops_400Bus_Direction_1.keys()):
+        dic = {}
+        for stopid in Stops_400Bus_Direction_1.keys():
+
+            dic[str(stopid)] = 0
+        for stopid in stops:
+
+            dic[str(stopid)] += 1
+        #print(stops)
+        print(dic)
+        print("********************************")
+        print(trip_dic)
+        print("--------------------------------")
+        print()
     if num == '1':
         for stopid in stops:
             Stops_sequence[stopid] = stops.index(stopid)
-print(Stops_sequence)
+'''
+    
+#print(Stops_sequence)
 
 
 
@@ -104,8 +298,6 @@ for stopid,location_dic in Stops_400Bus_Direction_1.items():
     if y<minStopY:
         minStopY = y
         minStop = stopid
-
-
 minStopX = Stops_400Bus_Direction_1[minStop]["X"]
 StopsRight_dic = {}
 StopsLeft_dic = {}
@@ -117,24 +309,19 @@ for stopid,location_dic in Stops_400Bus_Direction_1.items():
         StopsRight_dic[location_dic["X"]] = stopid
     else:
         StopsLeft_dic[location_dic["Y"]] = stopid
-
 StopsRight_dic = dict(sorted(StopsRight_dic.items(),reverse=True))
 StopsLeft_dic = dict(sorted(StopsLeft_dic.items()))
-
 StopsRight = list(StopsRight_dic.values())
 StopsLeft = list(StopsLeft_dic.values())
-
 for stopid in StopsRight:
     Stops_sequence.append(stopid)
 Stops_sequence.append(minStop)
 for stopid in StopsLeft:
     Stops_sequence.append(stopid)
-
 # determine the right sequence of stops
 for i,trip in AllTrips_400Bus_Direction1.items():
     
     tripStopsSquence = list(trip.values())
-
     index1 = 0
     index2 = 0
     while(index1<=len(tripStopsSquence)-2):
@@ -142,7 +329,6 @@ for i,trip in AllTrips_400Bus_Direction1.items():
         while(index2<=len(tripStopsSquence)-1):
             stop1 = tripStopsSquence[index1]
             stop2 = tripStopsSquence[index2]
-
             stop1_index_ = Stops_sequence.index(str(stop1))
             stop2_index_ = Stops_sequence.index(str(stop2))
             if stop1_index_ > stop2_index_:

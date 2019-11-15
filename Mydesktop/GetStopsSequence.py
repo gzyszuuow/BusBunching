@@ -46,15 +46,15 @@ busid = 400
 Stops_sequence = []
 Stops_Direction1 = {}
 
-Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
-#Stops_400Bus_Direction_1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Stops_400Bus_Direction_1.json"
+#Stops_400Bus_Direction_1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\Stops_400Bus_Direction_1.json"
+Stops_400Bus_Direction_1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Stops_400Bus_Direction_1.json"
 Stops_400Bus_Direction_1 = None
 with open(Stops_400Bus_Direction_1_path) as f:
     d = json.load(f)
     Stops_400Bus_Direction_1 = dict(d)
 
-AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
-#AllTrips_400Bus_Direction1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/AllTrips_400Bus_Direction1.json"
+#AllTrips_400Bus_Direction1_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\AllTrips_400Bus_Direction1.json"
+AllTrips_400Bus_Direction1_path  = "/Users/gongcengyang/Desktop/BusBunching-master/Data/AllTrips_400Bus_Direction1.json"
 AllTrips_400Bus_Direction1 = None
 with open(AllTrips_400Bus_Direction1_path) as f:
     d = json.load(f)
@@ -77,31 +77,32 @@ for num,trip_dic in AllTrips_400Bus_Direction1.items():
 
 #Trips to determine the sequence of stops
 def FindAndInsertPartStops(Stops_sequence,stops):
-
-    Stops_sequence_ = copy.deepcopy(Stops_sequence)
-
+    #Stops_sequence_ = []
+    PosionsInsertValues = {}
     index = 1
-    while(index<=len(Stops_sequence_)-1):
-        stopA = Stops_sequence_[index-1]
-        stopB = Stops_sequence_[index]
+    while(index<=len(Stops_sequence)-1):
+        stopA = Stops_sequence[index-1]
+        stopB = Stops_sequence[index]
+        #print(stopA)
+        #print(stopB)
+        #print()
         if (stopA in stops) and (stopB in stops):
             stopA_index = stops.index(stopA)
             stopB_index = stops.index(stopB)
-
             StopsPart = stops[stopA_index+1:stopB_index]
+            StopsPart.reverse()
+            PosionsInsertValues[index] = StopsPart
 
-            index_StopsPart = len(StopsPart)-1
-            while(index_StopsPart>=0):
-                Stops_sequence_.insert(stopA_index+1,StopsPart[index_StopsPart])
-                index_StopsPart-=1
-        
-        #print(index)
-        #print(len(Stops_sequence)-1)
-        #print(Stops_sequence)
-        #print()
         index+=1
+    #print(PosionsInsertValues)
 
-    #return Stops_sequence_
+    OffsetNumIndex = 0
+    for index,stopids in PosionsInsertValues.items():
+        insert_index = index+OffsetNumIndex
+        for stopid in stopids:
+            if stopid not in Stops_sequence:
+                Stops_sequence.insert(insert_index,stopid)
+                OffsetNumIndex+=1
     
 
 
@@ -118,11 +119,13 @@ def InsertStopIntoStops_sequence(Stops_sequence,stops):
 
         index1 = start_index_stops-1
         while(index1>=0):
-            Stops_sequence.insert(0,stops[index1])
+            if stops[index1] not in Stops_sequence:
+                Stops_sequence.insert(0,stops[index1])
             index1-=1
         index2 = end_index_stops+1
         while(index2<=len(stops)-1):
-            Stops_sequence.insert(len(Stops_sequence),stops[index2])
+            if stops[index2] not in Stops_sequence:
+                Stops_sequence.insert(len(Stops_sequence),stops[index2])
             index2+=1
         FindAndInsertPartStops(Stops_sequence,stops)
         #Stops_sequence = copy.deepcopy(FindAndInsertPartStops(Stops_sequence,stops))
@@ -132,7 +135,8 @@ def InsertStopIntoStops_sequence(Stops_sequence,stops):
         start_index_stops = stops.index(start_value)
         index1 = start_index_stops-1
         while(index1>=0):
-            Stops_sequence.insert(0,stops[index1])
+            if stops[index1] not in Stops_sequence:
+                Stops_sequence.insert(0,stops[index1])
             index1-=1
     
     elif end_value in stops:
@@ -140,7 +144,8 @@ def InsertStopIntoStops_sequence(Stops_sequence,stops):
         end_index_stops = stops.index(end_value)
         index2 = end_index_stops+1
         while(index2<=len(stops)-1):
-            Stops_sequence.insert(len(Stops_sequence),stops[index2])
+            if stops[index2] not in Stops_sequence:
+                Stops_sequence.insert(len(Stops_sequence),stops[index2])
             index2+=1
 
 
@@ -173,14 +178,15 @@ for _,trip_dic in AllTrips_400Bus_Direction1.items():
         num+=1
 
 print(Stops_sequence)
-
+print(len(Stops_sequence))
+print()
+print()
+print()
+#print(set(Stops_sequence))
 '''
-test part----------------------------------------------todo
-
 def FindAndInsertPartStops(Stops_sequence,stops):
-
-    #Stops_sequence_ = copy.deepcopy(Stops_sequence)
-
+    #Stops_sequence_ = []
+    PosionsInsertValues = {}
     index = 1
     while(index<=len(Stops_sequence)-1):
         stopA = Stops_sequence[index-1]
@@ -191,46 +197,46 @@ def FindAndInsertPartStops(Stops_sequence,stops):
         if (stopA in stops) and (stopB in stops):
             stopA_index = stops.index(stopA)
             stopB_index = stops.index(stopB)
-
             StopsPart = stops[stopA_index+1:stopB_index]
-
-            index_StopsPart = len(StopsPart)-1
-            while(index_StopsPart>=0):
-                Stops_sequence.insert(stopA_index+1,StopsPart[index_StopsPart])
-                index_StopsPart-=1
+            StopsPart.reverse()
+            PosionsInsertValues[index] = StopsPart
+            #index_StopsPart = len(StopsPart)-1
+            #while(index_StopsPart>=0):
+            #    Stops_sequence.insert(stopA_index+1,StopsPart[index_StopsPart])
+            #    index_StopsPart-=1
         
         #print(index)
         #print(len(Stops_sequence)-1)
         #print(Stops_sequence)
         #print()
         index+=1
+    print(PosionsInsertValues)
 
-    #return Stops_sequence_
-
+    OffsetNumIndex = 0
+    for index,stopids in PosionsInsertValues.items():
+        insert_index = index+OffsetNumIndex
+        for stopid in stopids:
+            Stops_sequence.insert(insert_index,stopid)
+        OffsetNumIndex+=len(stopids)
+        
 Stops_sequence = ['a','b','c','d']
 stops = ['x','y','b',1,2,3,'c',5,6,7,'d']
 FindAndInsertPartStops(Stops_sequence,stops)
 print(Stops_sequence)
-
-
 '''
 
 '''
 Stops_sequence = {}
 for stopid,_ in Stops_400Bus_Direction_1.items():
     Stops_sequence[stopid] = None
-
 num = 0
 for _,trip_dic in AllTrips_400Bus_Direction1.items():
-
     stops = list(trip_dic.values())
     stops = [x[0] for x in groupby(stops)]
-
     # if a stop in a trip show more than once at different time ,this trip cannot use
     dic = {}
     for stopid in Stops_400Bus_Direction_1.keys():
         dic[str(stopid)] = 0
-
     trip_continue_flag = -1
     for stopid in stops:
         dic[str(stopid)] += 1
@@ -247,10 +253,6 @@ for _,trip_dic in AllTrips_400Bus_Direction1.items():
         else:
             index_stops = 0
             while(index_stops<=len(stops)):
-
-
-
-
         num+=1
     else:
         continue
@@ -263,10 +265,8 @@ print(Stops_sequence)
     if len(stops)>len(Stops_400Bus_Direction_1.keys()):
         dic = {}
         for stopid in Stops_400Bus_Direction_1.keys():
-
             dic[str(stopid)] = 0
         for stopid in stops:
-
             dic[str(stopid)] += 1
         #print(stops)
         print(dic)

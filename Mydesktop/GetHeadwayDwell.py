@@ -18,14 +18,6 @@ from itertools import groupby
 import numpy as np  # 数组相关的库
 import matplotlib.pyplot as plt  # 绘图库
 
-def GetdictKeyByValue(dic,value):
-    Keys = []
-    for key,value_ in dic.items():
-        if value == value_:
-            Keys.append(key)
-    return Keys
-
-
 #ROUTEID from right to left
 ROUTEsID1 = ['400-39','400-40','400-57','400-58','400-59']
 #ROUTEID from left to right 
@@ -33,8 +25,9 @@ ROUTEsID2 = ['400-41','400-42','400-60','400-61','400-62']
 #ROUTEID delete
 ROUTEsID3 = ['400-43','400-44','400-49','400-50','400-51','400-54','400-69']
 
-busid = 400
-path = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\"+str(busid)+".csv"
+#busid = 400
+#path = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\"+str(busid)+".csv"
+path = "/Users/gongcengyang/Desktop/BusBunching-master/Data/Part400.csv"
 opaldata =  pd.read_csv(path)
 #opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'OPRTR_ID', 'RUN_DIR_CD', 'TRIP_ID', 'JS_STRT_DT_FK','TAG1_TM', 'TAG1_TS_NUM', 'TAG1_TS_NM', 'TAG1_LAT_VAL', 'TAG1_LONG_VAL','TAG2_TM', 'TAG2_TS_NUM', 'TAG2_TS_NM', 'TAG2_LAT_VAL','TAG2_LONG_VAL']]
 opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'RUN_DIR_CD', 'TRIP_ID', 'JS_STRT_DT_FK','TAG1_TM', 'TAG1_TS_NUM', 'TAG1_LAT_VAL', 'TAG1_LONG_VAL','TAG2_TM', 'TAG2_TS_NUM', 'TAG2_LAT_VAL','TAG2_LONG_VAL']]
@@ -44,10 +37,10 @@ opaldata = opaldata[opaldata["RUN_DIR_CD"] == 1]
 
 Stops_sequence = []
 
-with open('C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\UsedStopsSequence_BusRout400.txt') as f:
-    for line in f:
-        odom = line.split()
-        Stops_sequence.append(int(odom[0]))
+#with open('C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\UsedStopsSequence_BusRout400.txt') as f:
+#    for line in f:
+#        odom = line.split()
+#        Stops_sequence.append(int(odom[0]))
 
 
 #print(opaldata)
@@ -82,10 +75,33 @@ for name_byday,group_byday in grouped_byday:
             Trajectoies[name_byday][name_bytrip] = []
 
             for index,row in group_bytrip.iterrows():
-                dic1 = {row["TAG1_TM"]:row["TAG1_TS_NUM"]}
-                dic2 = {row["TAG2_TM"]:row["TAG2_TS_NUM"]}
+                dic1 = {'Time':row["TAG1_TM"],'Stop':row["TAG1_TS_NUM"]}
+                dic2 = {'Time':row["TAG2_TM"],'Stop':row["TAG2_TS_NUM"]}
                 Trajectoies[name_byday][name_bytrip].append(dic1)
                 Trajectoies[name_byday][name_bytrip].append(dic2)
+#print(Trajectoies)
+
+for day, trip_dic in Trajectoies.items():
+
+    for tripid,l in trip_dic.items():
+        newlist = sorted(l, key=lambda k: k['Time'])
+        Trajectoies[day][tripid] = newlist
+
+
+for day, trip_dic in Trajectoies.items():
+    ArrivalTime[day] = {}
+    for tripid,l in trip_dic.items():
+        ArrivalTime[day][tripid] = {}
+        
+        for dic_item in l:
+            stopid = dic_item["Stop"]
+            time = dic_item["Time"]
+
+            if ArrivalTime[day][tripid].get(stopid) == None:
+                ArrivalTime[day][tripid][stopid] = time
+
+
+
 
 
 

@@ -1,0 +1,11 @@
+https://www.tensorflow.org/tutorials/text/nmt_with_attention
+
+https://medium.com/@moshnoi2000/all-you-need-is-attention-computer-vision-edition-dbe7538330a4
+
+https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
+
+https://machinelearningmastery.com/how-to-develop-lstm-models-for-multi-step-time-series-forecasting-of-household-power-consumption/
+
+https://github.com/LukeTonin/keras-seq-2-seq-signal-prediction/tree/caca07cac3a5d3a0c651af950c63feb9d96dc14d
+
+https://machinelearningmastery.com/develop-encoder-decoder-model-sequence-sequence-prediction-keras/

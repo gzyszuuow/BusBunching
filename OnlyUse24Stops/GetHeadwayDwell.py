@@ -26,12 +26,12 @@ ROUTEsID2 = ['400-41','400-42','400-60','400-61','400-62']
 #ROUTEID delete
 ROUTEsID3 = ['400-43','400-44','400-49','400-50','400-51','400-54','400-69']
 
-Stops_sequence = []
+Stops_sequence28 = []
 
-with open('C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\UsedStopsSequence_BusRout400.txt') as f:
+with open('C:\\Users\\zg148\\Desktop\\BusBunching\\OnlyUse24Stops\\28UsedStopsSequence_BusRout400.txt') as f:
     for line in f:
         odom = line.split()
-        Stops_sequence.append(int(odom[0]))
+        Stops_sequence28.append(int(odom[0]))
 
 
 busid = 400
@@ -42,8 +42,7 @@ opaldata = opaldata[['ROUTE_ID', 'ROUTE_VAR_ID','BUS_ID', 'RUN_DIR_CD', 'TRIP_ID
 
 opaldata = opaldata[~opaldata["ROUTE_VAR_ID"].isin(ROUTEsID3)]
 opaldata = opaldata[opaldata["RUN_DIR_CD"] == 1]
-opaldata = opaldata[opaldata["TAG1_TS_NUM"].isin(Stops_sequence) & opaldata["TAG2_TS_NUM"].isin(Stops_sequence)]
-opaldata = opaldata.head(5000)
+opaldata = opaldata[opaldata["TAG1_TS_NUM"].isin(Stops_sequence28) & opaldata["TAG2_TS_NUM"].isin(Stops_sequence28)]
 
 '''
 
@@ -120,6 +119,7 @@ for day, trip_dic in Trajectoies.items():
             if ArrivalTime[day][tripid].get(stopid) == None:
                 ArrivalTime[day][tripid][stopid] = time
 
+
 def TimesDuringTwoTrips(trip1,trip2,DuringSeconds):
     flag = -1
     stops = [val for val in trip1.keys() if val in trip2.keys()]
@@ -141,7 +141,7 @@ def FindNearTripsAccrossStops(ArrivalTime,stopsNotinTrip,GivenTrip):
         NearTripsNum = 0
         #while(len(NearTripsAcrossStops[stopid]) <= 7 and hour<3):
         #while(NearTripsNum <= 7 and hour<3):
-        while(NearTripsNum <= 30):
+        while(NearTripsNum <= 60):
             NearTripsAcrossStops[stopid][hour] = []
             during_secons = hour*3600
 
@@ -173,8 +173,8 @@ def AverageArrivalTime(ArrivalTime,Day,Tripid,stopsNotinTrip,GivenTrip,NearTrips
                 for stopintrips_id in stopsintwotrips:
                     traveltime = abs(neartrip[stopintrips_id] - neartrip[stopnotintrip_id])
                     
-                    index_stopintrips_id = Stops_sequence.index(stopintrips_id)
-                    if stopnotintrip_id in Stops_sequence[:index_stopintrips_id]:
+                    index_stopintrips_id = Stops_sequence28.index(stopintrips_id)
+                    if stopnotintrip_id in Stops_sequence28[:index_stopintrips_id]:
                         arrivetimeforstop.append(GivenTrip[stopintrips_id] - traveltime)
                     else:
                         arrivetimeforstop.append(GivenTrip[stopintrips_id] + traveltime)
@@ -190,7 +190,7 @@ def FillNoneValueInArrivalTime(ArrivalTime):
 
     for day,trip_dic in ArrivalTime.items():
         for tripid,trip in trip_dic.items():
-            stopsNotinTrip = [stopid for stopid in Stops_sequence if stopid not in trip.keys()]
+            stopsNotinTrip = [stopid for stopid in Stops_sequence28 if stopid not in trip.keys()]
             
             GivenTrip = copy.deepcopy(trip)
 
@@ -206,7 +206,52 @@ def FillNoneValueInArrivalTime(ArrivalTime):
 
 
 
-#FillNoneValueInArrivalTime(ArrivalTime)
+FillNoneValueInArrivalTime(ArrivalTime)
+
+
+Headway = {}
+for day,trip_dic in ArrivalTime.items():
+
+    TripSartTime = []
+    for tripid,trip in trip_dic.items():
+        start_stop = str(Stops_sequence28[0])
+        start_time = trip[start_stop]
+        dic = {"SatrtTime":start_time,"TripID":tripid}
+        TripSartTime.append(dic)
+
+    TripSartTimeSort = sorted(TripSartTime, key=lambda k: k['SatrtTime'])
+    trip_seuence = []
+    for dic_item in TripSartTimeSort:
+        trip_seuence.append(dic_item["TripID"])
+
+    Headway[day] = {}
+
+    #tripids = list(trip_dic.keys())
+    tripids = trip_seuence
+    index1 = 0
+    index2 = 1
+    while(index2<=len(tripids)-1):
+        Headway[day][tripids[index2]] = []
+        
+        trip1 = trip_dic[tripids[index1]]
+        trip2 = trip_dic[tripids[index2]]
+        flag = 1
+        for stopid in Stops_sequence28:
+            headway = abs((trip2[str(stopid)] - trip1[str(stopid)])/60)
+
+            Headway[day][tripids[index2]].append(headway)
+
+            if headway>60:
+                flag = -1
+                break
+
+        if flag == -1:
+            del Headway[day][tripids[index2]]
+
+        index1+=1
+        index2+=1
+
+print(Headway)
 
 
 #dwell time in every stop in each trip    {Date1:{tripid:{stop:dwell,stop:dwell...}},{tripid:{stop:dwell,stop:dwell...}}, Date2:} 
@@ -241,118 +286,3 @@ for day, trip_dic in Trajectoies.items():
 
 print(DwellTime)
 
-
-
-'''
-#validation the ArrivalTime
-ArrivalTime_path  = "C:\\Users\\zg148\\Desktop\\BusBunching\\Data\\ArrivalTime.json"
-ArrivalTime = None
-with open(ArrivalTime_path) as f:
-    d = json.load(f)
-    ArrivalTime = dict(d)
-
-Headway = {}
-for day,trip_dic in ArrivalTime.items():
-
-    TripSartTime = []
-    for tripid,trip in trip_dic.items():
-        start_stop = str(Stops_sequence[0])
-        start_time = trip[start_stop]
-        dic = {"SatrtTime":start_time,"TripID":tripid}
-        TripSartTime.append(dic)
-
-    TripSartTimeSort = sorted(TripSartTime, key=lambda k: k['SatrtTime'])
-    trip_seuence = []
-    for dic_item in TripSartTimeSort:
-        trip_seuence.append(dic_item["TripID"])
-
-    Headway[day] = {}
-
-    #tripids = list(trip_dic.keys())
-    tripids = trip_seuence
-    index1 = 0
-    index2 = 1
-    while(index2<=len(tripids)-1):
-        Headway[day][tripids[index2]] = []
-        
-        trip1 = trip_dic[tripids[index1]]
-        trip2 = trip_dic[tripids[index2]]
-        flag = 1
-        for stopid in Stops_sequence:
-            headway = abs((trip2[str(stopid)] - trip1[str(stopid)])/60)
-
-            Headway[day][tripids[index2]].append(headway)
-
-            if headway>60:
-                flag = -1
-                break
-
-        if flag == -1:
-            del Headway[day][tripids[index2]]
-
-        index1+=1
-        index2+=1
-
-
-num = 0
-for day,headway_dic in Headway.items():
-    num+=len(list(headway_dic.keys()))
-    for tripid,headwaysequence in headway_dic.items():
-        print(headwaysequence)
-        print()
-    #print(day)
-    #print(headway_dic)
-    #print()
-
-print()
-print()
-print()
-print(num)
-'''
-
-
-
-
-
-
-
-'''
-grouped_byday = opaldata.groupby("JS_STRT_DT_FK")
-for name_byday,group_byday in grouped_byday:
-    #group_byday.sort_values(by=['TAG1_TM'],inplace=True)
-    grouped_bytrip = group_byday.groupby("TRIP_ID")
-    for name_bytrip,group_bytrip in grouped_bytrip:
-        busids = list(set(group_bytrip["BUS_ID"]))
-        dic = {}
-        for busid in busids:
-            df = group_bytrip[group_bytrip["BUS_ID"] == busid]
-            dic[busid] = df.shape[0]
-        if len(busids)>1:
-            #print(busids)
-            #print(group_bytrip)
-            print(dic)
-
-
-print(opaldata)
-print()
-print()
-print()
-num1 = 0
-num2 = 0
-for day,trip_dic in ArrivalTime.items():
-    for tripid,trip in trip_dic.items():
-        num1+=len(Stops_sequence)
-        num2+=len(trip)
-print(num1)
-print(num2)
-print(num2/num1)
-print()
-
-
-#how many trips each day
-for day,trip_dic in ArrivalTime.items():
-    print(day)
-    print(len(trip_dic.keys()))
-    print("----------------------------")
-    print()
-'''

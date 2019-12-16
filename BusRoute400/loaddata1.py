@@ -68,6 +68,35 @@ def data_each_route(busid,dire):
     
     return NearTrips,DwellTime,ArrivalTime,TripSequence,Stops_sequence
 
+
+def FindHeadwayHisDays(DayNow,Trip_Index,NearTrips,TripSequence,ArrivalTime,Stops_sequence):
+    headway = []
+
+    #TripNow = TripSequence[DayNow][Trip_Index]
+    DayNow_index = Days.index(DayNow)
+
+    index = DayNow_index - historical_prenum
+    while(index<DayNow_index):
+        
+        day = Days[index]
+        triplist = NearTrips[DayNow][TripSequence[DayNow][Trip_Index]][day]
+        triplist_sort = sorted(triplist, key=lambda k: k['TimeGap'])
+        if len(triplist_sort)!=0:
+            nearest_trip = triplist_sort[0]
+            nearest_trip_id = nearest_trip["TripID"]
+            nearest_trip_index = TripSequence[day].index(nearest_trip_id)
+            if nearest_trip_index>0:
+                ls = []
+                trip1 = ArrivalTime[day][TripSequence[day][nearest_trip_index-1]]
+                trip2 = ArrivalTime[day][nearest_trip_id]
+                for stop in Stops_sequence:
+                    ls.append(trip2[stop] - trip1[stop])
+                headway.append(ls)                
+        index+=1
+
+    return headway
+    
+
 def get_data():
 
     X2_headways = []
@@ -82,6 +111,11 @@ def get_data():
             for DayNow in Days:
                 Trip_Index = historical_prenum+1
                 while(Trip_Index<len(TripSequence[DayNow])):
+
+                    DayNow_index = Days.index(DayNow)
+                    if (DayNow_index<historical_prenum) and (Trip_Index<2*historical_prenum+1): #如果target headway 之前没有historical_prenum*2个headway 就舍去
+                        continue
+
                     #target headway 
                     headway_target = []
                     trip1 = ArrivalTime[DayNow][TripSequence[DayNow][Trip_Index-1]]
@@ -91,17 +125,48 @@ def get_data():
                     y_target_headway.append(headway_target)
 
                     #historical headways
-                    index_start = Trip_Index - historical_prenum
-                    ls = []
-                    while(index_start <= Trip_Index-1):
-                        headway_his = []
-                        trip1_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start-1]]
-                        trip2_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start]]
-                        for stop in Stops_sequence:
-                            headway_his.append(trip2_his[stop] - trip1[stop])
-                        ls.append(headway_his)
-                    X2_headways.append()
+                    if DayNow_index<historical_prenum: #historical_prenum*2前的target headway预测
+                        index_start = Trip_Index - historical_prenum*2
+                        ls = []
+                        while(index_start <= Trip_Index-1):
+                            headway_his = []
+                            trip1_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start-1]]
+                            trip2_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start]]
+                            for stop in Stops_sequence:
+                                headway_his.append(trip2_his[stop] - trip1_his[stop])
+                            ls.append(headway_his)
+                            index_start+=1
+                        X2_headways.append(ls)
 
+                    else:                              #historical_prenum前时间段的headway以及historical_prenum天的当前时间段的headway预测
+                        heasway_befor_days = FindHeadwayHisDays(DayNow,Trip_Index,NearTrips,TripSequence,ArrivalTime,Stops_sequence)
+                        ls = []
+                        for item in heasway_befor_days:
+                            ls.append(item)
+
+                        index_start = Trip_Index - historical_prenum
+                        while(index_start <= Trip_Index-1):
+                            headway_his = []
+                            trip1_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start-1]]
+                            trip2_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start]]
+                            for stop in Stops_sequence:
+                                headway_his.append(trip2_his[stop] - trip1_his[stop])
+                            ls.append(headway_his)
+                            index_start+=1
+
+                        while(len(ls)<2*historical_prenum):
+                            headway_his = []
+                            trip1_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start-1]]
+                            trip2_his = ArrivalTime[DayNow][TripSequence[DayNow][index_start]]
+                            for stop in Stops_sequence:
+                                headway_his.append(trip2_his[stop] - trip1_his[stop])
+                            ls.append(headway_his)
+                            index_start+=1
+
+                        X2_headways.append(ls)
+
+                    #Stop Features
+                    
 
                     Trip_Index+=1
 

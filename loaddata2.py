@@ -42,6 +42,15 @@ with open(path_NumberofRoutes) as f:
 
 path = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\400.csv"
 opaldata =  pd.read_csv(path)
+#label the opldata with TimeFeatures/PassengersType
+opaldata_dropon_timefeature = []
+opaldata_dropoff_timefeature = []
+Types = []
+for index,row in opaldata.iteritems():
+    dropon_time = row[]
+    dropoff_time = row[]
+
+
 
 historical_prenum = 3
 
@@ -127,6 +136,12 @@ def KindsofPassengers(Day,Stop,TimeFeature,opaldata):
     #opaldata = opaldata["JS_STRT_DT_FK"]
     opaldata = opaldata[opaldata["JS_STRT_DT_FK"] == Day]
 
+    if TimeFeature == 0:
+        opaldata = opaldata[opaldata["JS_STRT_DT_FK"] == Day]
+    else:
+        opaldata = opaldata[opaldata["JS_STRT_DT_FK"] == Day]
+
+
     return dropon,dropoff
 
 def get_data():
@@ -148,8 +163,8 @@ def get_data():
                 tripid1 = TripNumber[TripIndex-1]["TripID"]
                 tripid2 = TripNumber[TripIndex]["TripID"]
 
-                trip1 = ArrivalTime[daynow][tripid1]
-                trip2 = ArrivalTime[daynow][tripid2]
+                trip1 = ArrivalTime[TripNumber[TripIndex-1]["Day"]][tripid1]
+                trip2 = ArrivalTime[TripNumber[TripIndex]["Day"]][tripid2]
                 target_headway = []
                 for stop in Stops_sequence:
                     t = abs(trip2[str(stop)] - trip1[str(stop)])
@@ -172,8 +187,8 @@ def get_data():
                         tripid1_his = TripNumber[startindex-1]["TripID"]
                         tripid2_his = TripNumber[startindex]["TripID"]
                         
-                        trip1_his = ArrivalTime[daynow][tripid1_his]
-                        trip2_his = ArrivalTime[daynow][tripid2_his]
+                        trip1_his = ArrivalTime[TripNumber[startindex-1]["Day"]][tripid1_his]
+                        trip2_his = ArrivalTime[TripNumber[startindex]["Day"]][tripid2_his]
                         
                         headway_his_each = []
                         for stop in Stops_sequence:
@@ -200,8 +215,8 @@ def get_data():
                         tripid1_his = TripNumber[startindex-1]["TripID"]
                         tripid2_his = TripNumber[startindex]["TripID"]
                         
-                        trip1_his = ArrivalTime[daynow][tripid1_his]
-                        trip2_his = ArrivalTime[daynow][tripid2_his]
+                        trip1_his = ArrivalTime[TripNumber[startindex-1]["Day"]][tripid1_his]
+                        trip2_his = ArrivalTime[TripNumber[startindex]["Day"]][tripid2_his]
                         
                         headway_his_each = []
                         for stop in Stops_sequence:
@@ -215,7 +230,6 @@ def get_data():
                         startindex+=1
 
                 X2_headways.append(headway_his)
-                TripIndex+=1
 
                 #3. Stop Features
                 startindex = TripIndex - historical_prenum
@@ -247,9 +261,9 @@ def get_data():
 
                         stopfeatures_eachstop.append(dwell)
 
-                        dropon,dropoff = KindsofPassengers(TripNumber[startindex]["Day"],stop,timefeature)
+                        dropon,dropoff = KindsofPassengers(TripNumber[startindex]["Day"],stop,timefeature,opaldata)
 
-
+                TripIndex+=1
                         
 
 

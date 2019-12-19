@@ -42,6 +42,8 @@ with open(path_NumberofRoutes) as f:
 
 path = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\400.csv"
 opaldata =  pd.read_csv(path)
+#opaldata = opaldata.head(10000)
+
 
 historical_prenum = 3
 
@@ -97,6 +99,7 @@ def data_each_route(busid,dire):
 
 def HistoricalHeadwaysBeforeDay(TripNow_id,daynow,day,NearTrips,TripSequence,ArrivalTime,Stops_sequence):
     headway_day = []
+
     neartrips_day = NearTrips[daynow][TripNow_id][day]
 
     tripsequence_day = TripSequence[day]
@@ -126,7 +129,24 @@ def KindsofPassengers(Day,Stop,TimeFeature,opaldata):
     #name=["CIN","CARD_TYP_CD","ROUTE_ID","ROUTE_VAR_ID","BUS_ID","TS_TYP_CD","OPRTR_ID","RUN_DIR_CD","TRIP_ID","JS_STRT_DT_FK","TAG1_TM","TAG1_TS_NUM","TAG1_TS_NM","TAG1_LAT_VAL","TAG1_LONG_VAL","TAG2_TM","TAG2_TS_NUM","TAG2_TS_NM","TAG2_LAT_VAL","TAG2_LONG_VAL"]
     #opaldata = opaldata["JS_STRT_DT_FK"]
     opaldata = opaldata[opaldata["JS_STRT_DT_FK"] == Day]
-
+    #drop on 
+    opaldata_dropon = opaldata[opaldata["TAG1_TS_NUM"] == int(Stop)]
+    opaldata_dropon = opaldata_dropon[opaldata_dropon["TimeFeature_Dropon"] == TimeFeature]
+    for x in PassengersType.keys():
+        opaldata_dropon_ = opaldata_dropon[opaldata_dropon["Passenger_Type"] == x]
+        if opaldata_dropon.shape[0] > 0:
+            dropon.append(opaldata_dropon_.shape[0]/opaldata_dropon.shape[0])
+        else:
+            dropon.append(0)
+    #drop off
+    opaldata_dropoff = opaldata[opaldata["TAG2_TS_NUM"] == int(Stop)]
+    opaldata_dropoff = opaldata_dropoff[opaldata_dropoff["TimeFeature_Dropoff"] == TimeFeature]
+    for x in PassengersType.keys():
+        opaldata_dropoff_ = opaldata_dropoff[opaldata_dropoff["Passenger_Type"] == x]
+        if opaldata_dropoff.shape[0] > 0:
+            dropoff.append(opaldata_dropoff_.shape[0]/opaldata_dropoff.shape[0])
+        else:
+            dropoff.append(0)
     return dropon,dropoff
 
 def get_data():
@@ -144,12 +164,20 @@ def get_data():
             while(TripIndex<=list(TripNumber.keys())[len(TripNumber.keys()) - 1]):
                 daynow = TripNumber[TripIndex]["Day"]
 
+                print(TripIndex)
+                print(daynow)
+                print()
+                #if TripIndex<470: ##########################################################gaidong
+                #    TripIndex+=1
+                #    continue
+
                 #1. y_target_headway
+                print("y_target_headway")
                 tripid1 = TripNumber[TripIndex-1]["TripID"]
                 tripid2 = TripNumber[TripIndex]["TripID"]
 
-                trip1 = ArrivalTime[daynow][tripid1]
-                trip2 = ArrivalTime[daynow][tripid2]
+                trip1 = ArrivalTime[TripNumber[TripIndex-1]["Day"]][tripid1]
+                trip2 = ArrivalTime[TripNumber[TripIndex]["Day"]][tripid2]
                 target_headway = []
                 for stop in Stops_sequence:
                     t = abs(trip2[str(stop)] - trip1[str(stop)])
@@ -158,22 +186,26 @@ def get_data():
                     else:
                         t = (t-MinHeadway)/MaxHeadway
                         target_headway.append(t)
+                ls = []
+                ls.append(target_headway)
                 
-                y_target_headway.append(target_headway)
+                y_target_headway.append(ls)
 
                 #2. X2_headways
+                print("X2_headways")
                 headway_his = []
 
                 daynow_index = Days.index(daynow)
                 if daynow_index - historical_prenum<0:
                     #2*historical_prenum historical headways before now
+                    print("2*historical_prenum historical headways before now")
                     startindex = TripIndex- historical_prenum*2
                     while(startindex <= TripIndex - 1):
                         tripid1_his = TripNumber[startindex-1]["TripID"]
                         tripid2_his = TripNumber[startindex]["TripID"]
                         
-                        trip1_his = ArrivalTime[daynow][tripid1_his]
-                        trip2_his = ArrivalTime[daynow][tripid2_his]
+                        trip1_his = ArrivalTime[TripNumber[startindex-1]["Day"]][tripid1_his]
+                        trip2_his = ArrivalTime[TripNumber[startindex]["Day"]][tripid2_his]
                         
                         headway_his_each = []
                         for stop in Stops_sequence:
@@ -187,21 +219,23 @@ def get_data():
                         startindex+=1
                 else:
                     #historical days headways + historical_prenum historical headways before now
+                    print("historical days headways + historical_prenum historical headways before now")
                     #(1)
                     start_day_index = daynow_index - historical_prenum
-                    while(start_day_index <= daynow_index):
+                    while(start_day_index < daynow_index):  ######################################gaidong
                         day = Days[start_day_index]
                         
                         headways_beforeday = HistoricalHeadwaysBeforeDay(TripNumber[TripIndex]["TripID"],daynow,day,NearTrips,TripSequence,ArrivalTime,Stops_sequence)
                         headway_his.append(headways_beforeday)
+                        start_day_index+=1
                     #(2)
                     startindex = TripIndex - historical_prenum
                     while(startindex <= TripIndex - 1):
                         tripid1_his = TripNumber[startindex-1]["TripID"]
                         tripid2_his = TripNumber[startindex]["TripID"]
                         
-                        trip1_his = ArrivalTime[daynow][tripid1_his]
-                        trip2_his = ArrivalTime[daynow][tripid2_his]
+                        trip1_his = ArrivalTime[TripNumber[startindex-1]["Day"]][tripid1_his]
+                        trip2_his = ArrivalTime[TripNumber[startindex]["Day"]][tripid2_his]
                         
                         headway_his_each = []
                         for stop in Stops_sequence:
@@ -215,15 +249,17 @@ def get_data():
                         startindex+=1
 
                 X2_headways.append(headway_his)
-                TripIndex+=1
 
                 #3. Stop Features
-                startindex = TripIndex - historical_prenum
+                print("Stop Features")
+                ls = []
+
+                startindex = TripIndex - 1
                 while(startindex <= TripIndex - 1):
                     tripid = TripNumber[startindex]["TripID"]
-                    trip = ArrivalTime[daynow][tripid]
+                    trip = ArrivalTime[TripNumber[startindex]["Day"]][tripid]
 
-                    stopfeatures_eachtime = []
+                    stopfeatures_ = []
                     
                     for stop in Stops_sequence:
                         stopfeatures_eachstop = []
@@ -243,19 +279,174 @@ def get_data():
                                 stopfeatures_eachstop.append(timefeature)
                                 break
                         
-                        dwell = DwellTime[TripNumber[startindex]["Day"]][tripid][stop]
+                        dwell = None
+                        if tripid in list(DwellTime[TripNumber[startindex]["Day"]].keys()):
+                            if stop in list(DwellTime[TripNumber[startindex]["Day"]][tripid].keys()):
+                                dwell = DwellTime[TripNumber[startindex]["Day"]][tripid][stop]
+                            else:
+                                dwell = 0
+                        else:
+                            dwell = 0
 
                         stopfeatures_eachstop.append(dwell)
 
-                        dropon,dropoff = KindsofPassengers(TripNumber[startindex]["Day"],stop,timefeature)
+                        dropon,dropoff = KindsofPassengers(TripNumber[startindex]["Day"],stop,timefeature,opaldata)
 
+                        for i in dropon:
+                            stopfeatures_eachstop.append(i)
+                        for i in dropoff:
+                            stopfeatures_eachstop.append(i)
 
-                        
+                        stopfeatures_.append(stopfeatures_eachstop)
+                    startindex+=1
+                    X1_stopfeatures.append(stopfeatures_)
 
+                #X1_stopfeatures.append(ls)
 
-
-
-
+                TripIndex+=1
         
+    return X1_stopfeatures,X2_headways,y_target_headway
 
 
+X1_stopfeatures,X2_headways,y_target_headway = get_data()
+
+X1_stopfeatures = np.array(X1_stopfeatures)
+X2_headways = np.array(X2_headways)
+y_target_headway = np.array(y_target_headway)
+
+
+print(y_target_headway.shape)
+print(X2_headways.shape)
+print(X1_stopfeatures.shape)
+
+np.save("y_target_headway",y_target_headway)
+np.save("X2_headways",X2_headways)
+np.save("X1_stopfeatures",X1_stopfeatures)
+
+
+'''
+path1 = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\Test\\y_target_headway.npy"
+path2 = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\Test\\X2_headways.npy"
+path3 = "C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\Test\\X1_stopfeatures.npy"
+
+y_target_headway = np.load(path1)
+X2_headways = np.load(path2)
+X1_stopfeatures = np.load(path3)
+
+index = 0
+while index<=49:
+    print(y_target_headway[index][0])
+    print()
+    print()
+    print(X2_headways[index][0])
+    print()
+    print()
+    print(X1_stopfeatures[index][0])
+    print()
+    print()
+
+    print("-------------------------------------")
+    for i in y_target_headway[index][0]:
+        print(i)
+    print()
+    print()
+    print()
+    print("**********************")
+    index+=1
+'''
+
+
+###############################################################################################
+'''
+#label the opldata with TimeFeatures/PassengersType
+opaldata_dropon_timefeature = []
+opaldata_dropoff_timefeature = []
+Types = []
+for index,row in opaldata.iterrows():
+    dropon_time = row["TAG1_TM"]
+    dropoff_time = row["TAG2_TM"]
+    pas_type = row["CARD_TYP_CD"]
+    
+    dropon_feature = None
+    dropoff_feature = None
+    for x,y in TimeFeatures.items():
+        if dropoff_time<=x:
+            dropoff_feature = y
+        if dropon_time<=x:
+            dropon_feature = y
+        if (dropoff_feature!=None) and (dropon_feature!=None):
+            break
+    
+    t = None
+    for key,l in PassengersType.items():
+        if pas_type in l:
+            t = key
+        if t!=None:
+            break
+    opaldata_dropon_timefeature.append(dropon_feature)
+    opaldata_dropoff_timefeature.append(dropoff_feature)
+    Types.append(t)
+
+opaldata["TimeFeature_Dropon"] = opaldata_dropon_timefeature
+opaldata["TimeFeature_Dropoff"] = opaldata_dropoff_timefeature
+opaldata["Passenger_Type"] = Types
+
+print(opaldata)
+opaldata.to_csv("C:\\Users\\bdu\\Desktop\\gzy\\BusBunching\\BusRoute400\\400_labled.csv")
+'''
+
+
+'''
+#3. Stop Features
+print("Stop Features")
+ls = []
+
+startindex = TripIndex - historical_prenum
+while(startindex <= TripIndex - 1):
+    tripid = TripNumber[startindex]["TripID"]
+    trip = ArrivalTime[daynow][tripid]
+
+    stopfeatures_eachtime = []
+    
+    for stop in Stops_sequence:
+        stopfeatures_eachstop = []
+
+        stopfeatures_eachstop.append(Stops_sequence.index(stop))
+        stopfeatures_eachstop.append(len(NumberofRoutes[stop]))
+
+        if stop in ExchangeStopsForEachRoute[busid][dire]:
+            stopfeatures_eachstop.append(1)
+        else:
+            stopfeatures_eachstop.append(0)
+        
+        timefeature = -1
+        for k in TimeFeatures.keys():
+            if trip[stop]<k:
+                timefeature = TimeFeatures[k]
+                stopfeatures_eachstop.append(timefeature)
+                break
+        
+        dwell = None
+        if tripid in list(DwellTime[TripNumber[startindex]["Day"]].keys()):
+            if stop in list(DwellTime[TripNumber[startindex]["Day"]][tripid].keys()):
+                dwell = DwellTime[TripNumber[startindex]["Day"]][tripid][stop]
+            else:
+                dwell = 0
+        else:
+            dwell = 0
+
+        stopfeatures_eachstop.append(dwell)
+
+        dropon,dropoff = KindsofPassengers(TripNumber[startindex]["Day"],stop,timefeature,opaldata)
+
+        for i in dropon:
+            stopfeatures_eachstop.append(i)
+        for i in dropoff:
+            stopfeatures_eachstop.append(i)
+
+        stopfeatures_eachtime.append(stopfeatures_eachstop)
+    startindex+=1
+    ls.append(stopfeatures_eachstop)
+
+X1_stopfeatures.append(ls)
+'''

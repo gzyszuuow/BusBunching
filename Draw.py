@@ -269,27 +269,72 @@ plt.scatter(x__,y__,c = "blue")
 plt.show()
 '''
 
-x1 = ["10:01:00","10:03:00","10:04:00","10:05:00","10:11:00","10:13:00","10:17:00"]
-y1 = [1,2,3,3,4,4,5]
 
-#x2 = ["10:03:00","10:06:00","10:07:00","10:08:00","10:14:00","10:16:00","10:21:00"]
-x2 = ["10:03:00","10:06:00","10:07:00","10:08:00","10:14:00"]
-y2 = [1,2,3,4,5]
 
-x3 = ["10:10:00","10:13:00","10:14:00","10:15:00","10:21:00","10:23:00","10:27:00"]
-y3 = [1,2,3,3,4,4,5]
+'''
+#Figure 1
+x1 = [1,2,3,4,5,6,7,8]
+y1 = [1,2,2,3,3,4,4,5]
+#plt.plot(x1,y1,linewidth=2)
+x2 = [3,4,4.5,5.5,6,7,7.5,8.5]
+y2 = [1,2,2,3,3,4,4,5]
+#plt.plot(x2,y2,linewidth=2)
+#x3 = [8,9,9.5,10.5,11,12,12.5,13.5]
+#y3 = [1,2,2,3,3,4,4,5]
 
-#x4 = ["10:00:00","10:02:00","10:00:00","10:02:00","10:02:00"]
-#y4 = [1,2,3,4,5]
-
-plt.plot(x1,y1,linewidth=1)
-plt.plot(x2,y2,linewidth=1)
-#plt.plot(x3,y3,linewidth=1)
-times = ["10:00:00","10:01:00","10:03:00","10:04:00","10:05:00","10:06:00",
-"10:07:00","10:08:00","10:10:00","10:11:00","10:12:00","10:13:00","10:14:00",
-"10:15:00","10:16:00","10:17:00","10:21:00","10:23:00","10:27:00"]
-x = range(len(times))
-plt.xticks(x,times,rotation=40)
-#plt.plot(x4,y4,linewidth=1)
+x4 = [8,9,10,11,12,13,14,15]
+y4 = [1,2,2,3,3,4,4,5]
+x = [x1,x2,x4]
+y = [y1,y2,y4]
+for index in range(0,len(x)):
+    if index == 1:
+        l1 = plt.plot(x[index],y[index],color = "red",label = "Bunched Trip")
+    else:
+        l2 = plt.plot(x[index],y[index],color = "blue",label = "Normal Trip")
 plt.yticks(np.arange(1, 6, 1))
+
+plt.xlabel('Time')
+plt.ylabel('Stop Number')
+
+ax = plt.gca() # grab the current axis 
+ax.set_xticks([2,4,6,8,10,12,14]) # choose which x locations to have ticks 
+ax.set_xticklabels(["10:01:00","10:03:00","10:04:00","10:05:00","10:06:00","10:07:00","10:08:00"],rotation=40)
+
+
+plt.legend(labels=['Normal Trip','Bunched Trip'],  loc='best')
+
+plt.show()
+'''
+
+#evaluation
+x1 = [1,2,3,4]
+rmse_our_400 = [0.08061,0.07546,0.07879,0.07189]
+rmse_gru_400 = [0.08875,0.08537,0.08795,0.08366]
+rmse_dnn_400 = [0.13708,0.12804,0.13407,0.12153]
+plt.subplot(121)
+plt.plot(x1,rmse_our_400,"--",marker = "o",color = "blue")
+plt.plot(x1,rmse_gru_400,"--",marker = "o",color = "green")
+plt.plot(x1,rmse_dnn_400,"--",marker = "o",color = "red")
+plt.title("Bus 400")
+plt.xlabel('Time')
+plt.ylabel('RMSE')
+ax = plt.gca()
+ax.set_xticks([1,2,3,4]) 
+ax.set_xticklabels(["Segment 1","Segment 2","Segment 3","Segment 4"],rotation=40)
+plt.legend(labels=['BB-seq2seq','GRU','DNN'],  loc='best')
+
+rmse_our_380 = [0.04697,0.04041,0.04935,0.04423]  
+rmse_gru_380 = [0.06411,0.06133,0.06146,0.06114]
+rmse_dnn_380 = [0.09647,0.09233,0.09826,0.09318]
+plt.subplot(122)
+plt.plot(x1,rmse_our_380,"--",marker = "o",color = "blue")
+plt.plot(x1,rmse_gru_380,"--",marker = "o",color = "green")
+plt.plot(x1,rmse_dnn_380,"--",marker = "o",color = "red")
+plt.title("Bus 380")
+plt.xlabel('Time')
+plt.ylabel('RMSE')
+ax = plt.gca()
+ax.set_xticks([1,2,3,4]) 
+ax.set_xticklabels(["Segment 1","Segment 2","Segment 3","Segment 4"],rotation=40)
+#plt.legend(labels=['BB-seq2seq','GRU','DNN'],  loc='best')
 plt.show()

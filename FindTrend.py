@@ -15,7 +15,7 @@ from functools import cmp_to_key
 from itertools import groupby
 import matplotlib.pyplot as plt
 
-BusIDs = [400,380]
+BusIDs = [380]
 Directions = [1,2]
 PublicHoliday  = ["2016-02-06","2016-02-07","2016-02-13","2016-02-14","2016-02-20","2016-02-21","2016-02-27","2016-02-28",
 "2016-03-05","2016-03-06","2016-03-12","2016-03-13","2016-03-19","2016-03-20","2016-03-25","2016-03-26","2016-03-27","2016-03-28"]
@@ -96,20 +96,21 @@ TripNumber,Headway_normalization = NormalizeData()
 
 Avgnum = 5
 
-num_i = 0
-num_j = num_i+Avgnum
+num_i_ = 0
+num_j = num_i_+Avgnum
 
 scatters = {}
 for stopindex_ in range(0,28):
     scatters[stopindex_] = []
 
+'''
 for busid in BusIDs:
     for dire in Directions:
         
         for stopindex in range(0,28):
             
             while (num_j<= 900):
-                num_i_ = num_i
+                #num_i_ = num_i
                 avg = 0
                 while(num_i_<=num_j):
                     day = TripNumber[busid][dire][num_i_]["Day"]
@@ -120,10 +121,10 @@ for busid in BusIDs:
                 avg = avg/Avgnum * 20
 
                 scatters[stopindex].append(avg)
-                print(stopindex)
-                num_i = num_j
-                num_j+=Avgnum
+                #num_i = num_j
+                num_j+=Avgnum  
 
+            print(stopindex)  
 print(scatters)
 print()
 print(scatters[0])
@@ -131,10 +132,34 @@ print(scatters[0])
 
 plt.plot(scatters[0])
 plt.show()
+'''
+stopindex = 2
+for busid in BusIDs:
+    for dire in Directions:
+            
+        while (num_j<= 900):
+            #num_i_ = num_i
+            avg = 0
+            while(num_i_<=num_j):
+                day = TripNumber[busid][dire][num_i_]["Day"]
+                tripid = TripNumber[busid][dire][num_i_]["TripID"]
+                headway = Headway_normalization[busid][dire][day][tripid]
+                avg+=headway[stopindex]
+                num_i_+=1
+            avg = avg/Avgnum * 20
+
+            scatters[stopindex].append(avg)
+            #num_i = num_j
+            num_j+=Avgnum  
+
+            #print(2)  
+print(scatters)
+print()
+print(scatters[0])
 
 
-
-
+plt.plot(scatters[stopindex])
+plt.show()
 
 
 
